@@ -6,7 +6,6 @@ import sys
 
 # Configurações
 RSS_URL = "https://www.vaticannews.va/pt.rss.xml"
-TIMEOUT = 30  # segundos
 
 def get_latest_news():
     try:
@@ -22,7 +21,7 @@ def get_latest_news():
         link = latest.link
         description = BeautifulSoup(latest.description, "html.parser").get_text()
 
-        print(f">> Notícia mais recente: {title[:50]}...")  # Mostra parte do título
+        print(f">> Notícia mais recente: {title[:50]}...")
         return title, link, description
 
     except Exception as e:
@@ -37,18 +36,17 @@ def post_to_bluesky(title, link, description):
         print("\n=== TENTANDO AUTENTICAÇÃO ===")
         print(f"Usuário: {os.environ.get('BLUESKY_USERNAME', 'NÃO DEFINIDO')}")
         
-        # Autenticação com timeout
+        # Autenticação (sem timeout)
         client.login(
             os.environ['BLUESKY_USERNAME'],
-            os.environ['BLUESKY_PASSWORD'],
-            timeout=TIMEOUT
+            os.environ['BLUESKY_PASSWORD']
         )
         print(">> Autenticação bem-sucedida!")
 
         # Preparar e postar
         post_text = f"{title}\n\n{description}\n\nLeia mais: {link}"
         print(f"\n=== CONTEÚDO DO POST ===")
-        print(post_text[:200] + "...")  # Mostra início do post
+        print(post_text[:200] + "...")
 
         response = client.send_post(text=post_text)
         print("\n>> Post publicado com sucesso!")
@@ -56,12 +54,11 @@ def post_to_bluesky(title, link, description):
 
     except Exception as e:
         print(f"\n>> ERRO CRÍTICO: {str(e)}")
-        sys.exit(1)  # Encerra o workflow com erro
+        sys.exit(1)
 
 if __name__ == "__main__":
-    # Verifica credenciais antes de continuar
     if not os.environ.get('BLUESKY_USERNAME') or not os.environ.get('BLUESKY_PASSWORD'):
-        print("ERRO: Credenciais não definidas. Configure BLUESKY_USERNAME e BLUESKY_PASSWORD nos Secrets do GitHub.")
+        print("ERRO: Credenciais não definidas.")
         sys.exit(1)
 
     title, link, description = get_latest_news()
@@ -70,4 +67,4 @@ if __name__ == "__main__":
         post_to_bluesky(title, link, description)
     else:
         print(">> Nenhum conteúdo válido para postar.")
-        sys.exit(0)  # Encerra sem erro se não houver conteúdo
+        sys.exit(0)
