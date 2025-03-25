@@ -41,16 +41,16 @@ def get_latest_news():
 
 def prepare_post(title, link):
     """Formatação que garante links clicáveis no Bluesky"""
-    post_text = f"{title}\n\n{link}"
+    post_text = f"{title}\n\n {link}"  # Espaço extra antes do link
     
     # Fallback se ainda for longo
     if len(post_text) > MAX_POST_LENGTH:
         available_space = MAX_POST_LENGTH - len(link) - 2  # 2 = espaços e \n
         title = f"{title[:available_space]}..."
-        post_text = f"{title}\n\n{link}"
+        post_text = f"{title}\n\n {link}"  # Espaço extra antes do link
     
     print(f">> Tamanho do post: {len(post_text)}/{MAX_POST_LENGTH} chars")
-    return post_text
+    return post_text.strip()
 
 def post_to_bluesky(title, link):
     try:
@@ -62,7 +62,7 @@ def post_to_bluesky(title, link):
         post_text = prepare_post(title, link)
         print(f"\n=== POST FINAL ===\n{post_text}\n=== FIM DO POST ===")
 
-        response = client.send_post(text=post_text)
+        response = client.send_post(text=post_text.strip())
         print("\n>> Post publicado com sucesso!")
         print(f">> Link clicável: bsky.app/profile/{response.uri.split('/')[-2]}/post/{response.uri.split('/')[-1]}")
         print(f">> URL da notícia: {link}")  # Confira se o link está correto
