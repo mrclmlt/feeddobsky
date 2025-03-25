@@ -1,5 +1,5 @@
 import feedparser
-from bs4 import BeautifulSoup  # Esta é a linha corrigida
+from bs4 import BeautifulSoup
 from atproto import Client
 import os
 import sys
@@ -24,8 +24,11 @@ def get_latest_news():
                 title = latest.title.strip()
                 link = latest.link.strip()
                 
+                # Garantia de link clicável:
                 if not link.startswith(('http://', 'https://')):
                     link = f"https://{link}"
+                elif link.startswith('http://'):
+                    link = link.replace('http://', 'https://')  # Force HTTPS
                 
                 print(f">> Notícia encontrada: {title[:60]}...")
                 return title, link
@@ -38,14 +41,21 @@ def get_latest_news():
         return None, None
 
 def prepare_post(title, link):
+    """Formatação que garante links clicáveis no Bluesky"""
+    # Estrutura otimizada:
+    # 1. Link SEMPRE em linha separada
+    # 2. Prefixo com emoji
+    # 3. Espaçamento consistente
+    
     post_text = f"{title}\n\n{LINK_EMOJI} {link}"
     
+    # Fallback se ainda for longo
     if len(post_text) > MAX_POST_LENGTH:
-        max_title_length = MAX_POST_LENGTH - len(LINK_EMOJI) - len(link) - 4
-        title = f"{title[:max_title_length]}..."
+        available_space = MAX_POST_LENGTH - len(LINK_EMOJI) - len(link) - 4  # 4 = espaços e \n
+        title = f"{title[:available_space]}..."
         post_text = f"{title}\n\n{LINK_EMOJI} {link}"
     
-    print(f">> Tamanho do post: {len(post_text)}/{MAX_POST_LENGTH} caracteres")
+    print(f">> Tamanho do post: {len(post_text)}/{MAX_POST_LENGTH} chars")
     return post_text
 
 def post_to_bluesky(title, link):
@@ -53,14 +63,15 @@ def post_to_bluesky(title, link):
         client = Client()
         print("\n=== TENTANDO AUTENTICAÇÃO ===")
         client.login(os.environ['BLUESKY_USERNAME'], os.environ['BLUESKY_PASSWORD'])
-        print(">> Autenticação bem-sucedida!")
+        print(">> Autenticação OK!")
 
         post_text = prepare_post(title, link)
-        print(f"\n=== CONTEÚDO PRONTO ===\n{post_text}")
+        print(f"\n=== POST FINAL ===\n{post_text}\n=== FIM DO POST ===")
 
         response = client.send_post(text=post_text)
         print("\n>> Post publicado com sucesso!")
-        print(f">> URL: bsky.app/profile/{response.uri.split('/')[-2]}/post/{response.uri.split('/')[-1]}")
+        print(f">> Link clicável: bsky.app/profile/{response.uri.split('/')[-2]}/post/{response.uri.split('/')[-1]}")
+        print(f">> URL da notícia: {link}")  # Confira se o link está correto
 
     except Exception as e:
         print(f"\n>> ERRO: {str(e)}")
@@ -68,7 +79,7 @@ def post_to_bluesky(title, link):
 
 if __name__ == "__main__":
     if not all(var in os.environ for var in ['BLUESKY_USERNAME', 'BLUESKY_PASSWORD']):
-        print("ERRO: Configure os secrets no GitHub!")
+        print("ERRO: Configure os secrets BLUESKY_USERNAME e BLUESKY_PASSWORD")
         sys.exit(1)
 
     title, link = get_latest_news()
@@ -76,5 +87,5 @@ if __name__ == "__main__":
     if title and link:
         post_to_bluesky(title, link)
     else:
-        print(">> Nenhum conteúdo válido para postar.")
+        print(">> Nada para postar.")
         sys.exit(0)
