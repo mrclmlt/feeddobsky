@@ -2,7 +2,7 @@ name: Bluesky RSS Bot
 
 on:
   schedule:
-    - cron: '0 */12 * * *'  # Roda a cada 12 horas (no minuto 0)
+        - cron: '0 0,12 * * *'  # Roda à 00:00 e 12:00 UTC
   workflow_dispatch:  # Permite rodar manualmente
 
 jobs:
@@ -10,21 +10,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout código
-        uses: actions/checkout@v4  # Atualizado para v4
+        uses: actions/checkout@v4
 
       - name: Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
+      - name: Limpar cache pip
+        run: pip cache purge
+
       - name: Instalar dependências
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt --force-reinstall
+          pip install --ignore-installed multiformats==0.1.9
+          pip install -r requirements.txt
 
-      - name: Verificar versões
-        run: |
-          pip list | grep -E "atproto|multiformats|dag-cbor"
+      - name: Verificar instalação
+        run: pip list
 
       - name: Rodar o script
         env:
