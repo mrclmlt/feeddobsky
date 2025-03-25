@@ -6,65 +6,73 @@ import sys
 
 # Configurações
 RSS_URL = "https://www.vaticannews.va/pt.rss.xml"
+MAX_POST_LENGTH = 300  # Limite do Bluesky
+LINK_EMOJI = "🔗"      # Emoji para o link
 
 def get_latest_news():
+    """Obtém a última notícia do feed RSS"""
     try:
         print("\n=== INICIANDO LEITURA DO RSS ===")
         feed = feedparser.parse(RSS_URL)
         
         if not feed.entries:
             print(">> ERRO: Nenhuma notícia encontrada no feed RSS")
-            return None, None, None
+            return None, None
 
         latest = feed.entries[0]
-        title = latest.title
-        link = latest.link
-        description = BeautifulSoup(latest.description, "html.parser").get_text()
+        title = latest.title.strip()
+        link = latest.link.strip()
 
-        print(f">> Notícia mais recente: {title[:50]}...")
-        return title, link, description
+        print(f">> Notícia mais recente: {title[:60]}...")
+        return title, link
 
     except Exception as e:
         print(f">> ERRO AO LER RSS: {str(e)}")
-        return None, None, None
+        return None, None
 
-def post_to_bluesky(title, link, description):
+def prepare_post(title, link):
+    """Formata o post respeitando o limite de caracteres"""
+    # Versão minimalista (prioriza título + link)
+    basic_post = f"{title}\n\n{LINK_EMOJI} {link}"
+    
+    if len(basic_post) <= MAX_POST_LENGTH:
+        return basic_post
+    
+    # Se ainda for longo, encurta o título
+    remaining_space = MAX_POST_LENGTH - len(link) - len(LINK_EMOJI) - 3  # 3 = espaços e quebras
+    shortened_title = f"{title[:remaining_space]}..."
+    return f"{shortened_title}\n\n{LINK_EMOJI} {link}"
+
+def post_to_bluesky(title, link):
+    """Publica no Bluesky com tratamento de erros"""
     try:
-        # Configuração do cliente
-        client = Client(base_url="https://bsky.social")
-        
+        client = Client()
         print("\n=== TENTANDO AUTENTICAÇÃO ===")
-        print(f"Usuário: {os.environ.get('BLUESKY_USERNAME', 'NÃO DEFINIDO')}")
-        
-        # Autenticação (sem timeout)
-        client.login(
-            os.environ['BLUESKY_USERNAME'],
-            os.environ['BLUESKY_PASSWORD']
-        )
+        client.login(os.environ['BLUESKY_USERNAME'], os.environ['BLUESKY_PASSWORD'])
         print(">> Autenticação bem-sucedida!")
 
-        # Preparar e postar
-        post_text = f"{title}\n\n{description}\n\nLeia mais: {link}"
-        print(f"\n=== CONTEÚDO DO POST ===")
-        print(post_text[:200] + "...")
+        post_text = prepare_post(title, link)
+        print(f"\n=== CONTEÚDO DO POST ({len(post_text)}/{MAX_POST_LENGTH} chars) ===")
+        print(post_text)
 
         response = client.send_post(text=post_text)
         print("\n>> Post publicado com sucesso!")
-        print(f"URI do post: {response.uri}")
+        print(f"URI: bsky.app/profile/{response.uri.split('/')[-2]}/post/{response.uri.split('/')[-1]}")
 
     except Exception as e:
         print(f"\n>> ERRO CRÍTICO: {str(e)}")
         sys.exit(1)
 
 if __name__ == "__main__":
-    if not os.environ.get('BLUESKY_USERNAME') or not os.environ.get('BLUESKY_PASSWORD'):
-        print("ERRO: Credenciais não definidas.")
+    # Verifica credenciais
+    if not all(k in os.environ for k in ['BLUESKY_USERNAME', 'BLUESKY_PASSWORD']):
+        print("ERRO: Configure BLUESKY_USERNAME e BLUESKY_PASSWORD nos Secrets.")
         sys.exit(1)
 
-    title, link, description = get_latest_news()
+    title, link = get_latest_news()
     
     if title and link:
-        post_to_bluesky(title, link, description)
+        post_to_bluesky(title, link)
     else:
-        print(">> Nenhum conteúdo válido para postar.")
+        print(">> Nada para postar.")
         sys.exit(0)
