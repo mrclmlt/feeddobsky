@@ -1,0 +1,11 @@
+# Ignorar arquivos de ambiente virtual
+venv/
+.env
+
+# Ignorar credenciais
+*.env
+*.key
+
+# Ignorar arquivos gerados pelo Python
+__pycache__/
+*.pyc
