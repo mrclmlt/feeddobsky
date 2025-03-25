@@ -23,8 +23,8 @@ jobs:
       - name: Instalar dependências
         run: |
           python -m pip install --upgrade pip
-          pip install --ignore-installed multiformats==0.1.9
-          pip install -r requirements.txt
+          pip install multiformats==0.1.4.post3  # Versão estável comprovada
+          pip install -r requirements.txt --ignore-installed
 
       - name: Verificar instalação
         run: pip list
