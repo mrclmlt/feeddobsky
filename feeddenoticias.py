@@ -10,7 +10,6 @@ RSS_URLS = [
     # "https://siteficticio.xml",
 ]
 MAX_POST_LENGTH = 300
-LINK_EMOJI = "🔗"
 
 def get_latest_news():
     try:
@@ -42,18 +41,13 @@ def get_latest_news():
 
 def prepare_post(title, link):
     """Formatação que garante links clicáveis no Bluesky"""
-    # Estrutura otimizada:
-    # 1. Link SEMPRE em linha separada
-    # 2. Prefixo com emoji
-    # 3. Espaçamento consistente
-    
-    post_text = f"{title}\n\n{LINK_EMOJI} {link}"
+    post_text = f"{title}\n\n{link}"
     
     # Fallback se ainda for longo
     if len(post_text) > MAX_POST_LENGTH:
-        available_space = MAX_POST_LENGTH - len(LINK_EMOJI) - len(link) - 4  # 4 = espaços e \n
+        available_space = MAX_POST_LENGTH - len(link) - 2  # 2 = espaços e \n
         title = f"{title[:available_space]}..."
-        post_text = f"{title}\n\n{LINK_EMOJI} {link}"
+        post_text = f"{title}\n\n{link}"
     
     print(f">> Tamanho do post: {len(post_text)}/{MAX_POST_LENGTH} chars")
     return post_text
