@@ -10,24 +10,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # Atualizado para v4
 
       - name: Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-- name: Instalar dependências
-  run: |
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt --force-reinstall  # Força reinstalação das versões corretas
-- name: Verificar versões
-  run: |
-    pip list | grep -E "atproto|multiformats|dag-cbor"    
+      - name: Instalar dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt --force-reinstall
 
-- name: Rodar o script
- env:
-  BLUESKY_USERNAME: ${{ secrets.BLUESKY_USERNAME }}
-  BLUESKY_PASSWORD: ${{ secrets.BLUESKY_PASSWORD }}
- run: |
-  python feeddenoticias.py
+      - name: Verificar versões
+        run: |
+          pip list | grep -E "atproto|multiformats|dag-cbor"
+
+      - name: Rodar o script
+        env:
+          BLUESKY_USERNAME: ${{ secrets.BLUESKY_USERNAME }}
+          BLUESKY_PASSWORD: ${{ secrets.BLUESKY_PASSWORD }}
+        run: |
+          python feeddenoticias.py
